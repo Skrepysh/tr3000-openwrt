@@ -23,6 +23,7 @@ jobs:
             | sort -V \
             | tail -n1)
 
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Latest OpenWrt: $VERSION"
     
       - name: Install dependencies
