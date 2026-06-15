@@ -1,0 +1,92 @@
+name: Build OpenWrt
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get latest OpenWrt release
+        id: version
+        run: |
+          VERSION=$(git ls-remote --tags https://github.com/openwrt/openwrt.git \
+            | grep -oE 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sed 's#refs/tags/##' \
+            | sort -V \
+            | tail -n1)
+
+          echo "Latest OpenWrt: $VERSION"
+    
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+          bzip2 g++ gawk gcc \
+          git glibc-source \
+          libncurses-dev make
+
+      - name: Clone OpenWrt
+        run: |
+          git clone https://github.com/openwrt/openwrt.git
+          cd openwrt
+          git checkout "${{ steps.version.outputs.version }}"
+
+      - name: Update feeds
+        run: |
+          cd openwrt
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Apply diffconfig
+        run: |
+          cp diffconfig openwrt/.config
+          cd openwrt
+          make defconfig
+
+      - name: Download sources
+        run: |
+          cd openwrt
+          make download -j$(($(nproc) + 1))
+      
+      - name: Download sources
+        run: |
+          cd openwrt
+          make download -j$(($(nproc) + 1))
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+          make -j$(($(nproc) + 1))
+
+      - name: Collect firmware
+        run: |
+          mkdir release
+
+          # Add config used during build to release
+          cp openwrt/.config release/config-${{ steps.version.outputs.version }}
+
+          find openwrt/bin/targets \
+            -type f \
+            \( \
+              -name "*.bin" -o \
+              -name "*.img.gz" -o \
+              -name "*.itb" -o \
+              -name "*.tar" \
+            \) \
+            -exec cp {} release/ \;
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: OpenWrt ${{ steps.version.outputs.version }}
+          files: release/*
+          generate_release_notes: true
