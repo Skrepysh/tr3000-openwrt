@@ -50,11 +50,6 @@ jobs:
           cp diffconfig openwrt/.config
           cd openwrt
           make defconfig
-
-      - name: Download sources
-        run: |
-          cd openwrt
-          make download -j$(($(nproc) + 1))
       
       - name: Download sources
         run: |
