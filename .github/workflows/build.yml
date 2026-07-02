@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Select OpenWrt release
         id: version
@@ -103,8 +103,13 @@ jobs:
             \) \
             -exec cp {} release/ \;
 
+          find openwrt \
+            -type f \
+            -name '*imagebuilder*.tar.zst' \
+            -exec cp {} release/ \;
+
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.version }}
           name: OpenWrt ${{ steps.version.outputs.version }}
