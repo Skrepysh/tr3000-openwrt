@@ -20,10 +20,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-        - name: Select OpenWrt release
+      - name: Select OpenWrt release
         id: version
         env:
-        REQUESTED_VERSION: ${{ inputs.openwrt_version }}
+          REQUESTED_VERSION: ${{ inputs.openwrt_version }}
         run: |
             if [ -n "$REQUESTED_VERSION" ]; then
                 VERSION="$REQUESTED_VERSION"
